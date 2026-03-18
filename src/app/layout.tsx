@@ -17,8 +17,12 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: 'Sticker Maker — Powered by AI',
+  title: 'AI Sticker Create',
   description: 'Generate premium custom stickers with AI. Instant, beautiful, downloadable.',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 interface RootLayoutProps {

@@ -88,10 +88,21 @@ export default function HomePage() {
       <FallingBackground />
       <MouseTrail />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 py-16">
+      {/* ── NAV BAR ──────────────────────────────── */}
+      <nav className="relative z-20 flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="AI Sticker Create" className="h-10 w-auto drop-shadow-lg" />
+          <span className="text-sm font-bold text-white/80 hidden sm:block" style={{ fontFamily: 'var(--font-syne)' }}>
+            AI Sticker Create
+          </span>
+        </div>
+      </nav>
+
+      <div className="relative z-10 max-w-5xl mx-auto px-4 pb-16">
 
         {/* ── HEADER ─────────────────────────────── */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 pt-4">
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
             HAYALİNDEKİ <span className="gradient-word-slow">STİCKERLARI</span> ÜRET!
           </h1>
