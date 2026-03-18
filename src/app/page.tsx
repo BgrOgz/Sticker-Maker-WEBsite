@@ -59,12 +59,28 @@ export default function HomePage() {
     }
   }
 
-  function handleDownload() {
+  function handleDownload(format: 'png' | 'svg') {
     if (!imageUrl) return;
+    const filename = `sticker-${Date.now()}`;
     const a = document.createElement('a');
-    a.href = imageUrl;
-    a.download = `sticker-${Date.now()}.png`;
+
+    if (format === 'png') {
+      a.href = imageUrl;
+      a.download = `${filename}.png`;
+    } else {
+      // Embed PNG inside SVG — accepted by most sticker printers
+      const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1024" height="1024" viewBox="0 0 1024 1024">
+  <image xlink:href="${imageUrl}" x="0" y="0" width="1024" height="1024"/>
+</svg>`;
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      a.href = URL.createObjectURL(blob);
+      a.download = `${filename}.svg`;
+    }
+
     a.click();
+    if (format === 'svg') URL.revokeObjectURL(a.href);
   }
 
   return (
@@ -177,12 +193,18 @@ export default function HomePage() {
                   alt="Generated sticker"
                   className="max-w-full max-h-56 object-contain rounded-xl"
                 />
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 justify-center">
                   <button
-                    onClick={handleDownload}
+                    onClick={() => handleDownload('png')}
                     className="px-4 py-2 rounded-xl bg-[#00d9ff] text-black text-xs font-bold hover:bg-[#00b8d4] transition-colors"
                   >
-                    İndir ↓
+                    PNG ↓
+                  </button>
+                  <button
+                    onClick={() => handleDownload('svg')}
+                    className="px-4 py-2 rounded-xl bg-[#a855f7] text-white text-xs font-bold hover:bg-[#9333ea] transition-colors"
+                  >
+                    SVG ↓
                   </button>
                   <button
                     onClick={() => setImageUrl(null)}
