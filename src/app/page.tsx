@@ -272,15 +272,26 @@ export default function HomePage() {
               <div key={style.id} className="rb-wrap">
               <button
                 onClick={() => handleStyleClick(style)}
-                className={`rb-inner w-full flex flex-col items-start gap-1 p-4 text-left transition-colors
-                  ${selectedStyle?.id === style.id ? 'bg-[#00d9ff]/10' : ''}`}
+                className={`rb-inner w-full flex flex-col items-end justify-end text-left transition-colors overflow-hidden relative
+                  ${selectedStyle?.id === style.id ? 'ring-2 ring-[#00d9ff]' : ''}`}
+                style={{ minHeight: '140px' }}
               >
-                <span className={`text-sm font-extrabold ${selectedStyle?.id === style.id ? 'text-[#00d9ff]' : 'text-white'}`}>
-                  {style.name}
-                </span>
-                <span className="text-[11px] text-[#666] leading-relaxed">
-                  {style.description}
-                </span>
+                {/* Background image */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                  style={{ backgroundImage: `url(/styles/${style.id}.png)` }}
+                />
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                {/* Text */}
+                <div className="relative z-10 p-3 w-full">
+                  <span className={`block text-sm font-extrabold ${selectedStyle?.id === style.id ? 'text-[#00d9ff]' : 'text-white'}`}>
+                    {style.name}
+                  </span>
+                  <span className="block text-[10px] text-white/60 leading-relaxed mt-0.5">
+                    {style.description}
+                  </span>
+                </div>
               </button>
               </div>
             ))}
