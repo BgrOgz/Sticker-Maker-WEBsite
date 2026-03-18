@@ -48,8 +48,8 @@ export default function HomePage() {
           document.getElementById('result')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       }
-    } catch {
-      setError('Bağlantı hatası, tekrar dene');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Bağlantı hatası, tekrar dene');
     } finally {
       setIsLoading(false);
     }

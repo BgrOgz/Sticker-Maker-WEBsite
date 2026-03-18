@@ -16,23 +16,29 @@ export async function POST(req: Request) {
 
   const stickerPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, no background elements, sticker art style`;
 
-  const result = await generateText({
-    model: google('gemini-3.1-flash-image-preview'),
-    prompt: stickerPrompt,
-    providerOptions: {
-      google: {
-        responseModalities: ['TEXT', 'IMAGE'],
+  try {
+    const result = await generateText({
+      model: google('gemini-2.0-flash-exp-image-generation'),
+      prompt: stickerPrompt,
+      providerOptions: {
+        google: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
       },
-    },
-  });
+    });
 
-  const imageFile = result.files?.find((f) => f.mediaType?.startsWith('image/'));
+    const imageFile = result.files?.find((f) => f.mediaType?.startsWith('image/'));
 
-  if (!imageFile) {
-    return Response.json({ error: 'Görsel oluşturulamadı, tekrar dene' }, { status: 500 });
+    if (!imageFile) {
+      return Response.json({ error: 'Görsel oluşturulamadı, tekrar dene' }, { status: 500 });
+    }
+
+    const dataUrl = `data:${imageFile.mediaType};base64,${imageFile.base64}`;
+
+    return Response.json({ imageUrl: dataUrl, generatedAt: new Date().toISOString() });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[generate] error:', message);
+    return Response.json({ error: message }, { status: 500 });
   }
-
-  const dataUrl = `data:${imageFile.mediaType};base64,${imageFile.base64}`;
-
-  return Response.json({ imageUrl: dataUrl, generatedAt: new Date().toISOString() });
 }
