@@ -1,7 +1,21 @@
-import { experimental_generateImage as generateImage } from 'ai';
-import { google } from '@ai-sdk/google';
-
 export const maxDuration = 60;
+
+interface GeminiPart {
+  text?: string;
+  inlineData?: { mimeType: string; data: string };
+}
+
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: { parts?: GeminiPart[] };
+  }>;
+  error?: { message: string };
+}
+
+const MODELS = [
+  'gemini-2.0-flash-preview-image-generation',
+  'gemini-2.0-flash-exp-image-generation',
+];
 
 export async function POST(req: Request) {
   const { prompt } = await req.json() as { prompt: string };
@@ -10,28 +24,47 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Prompt en az 3 karakter olmalı' }, { status: 400 });
   }
 
-  if (prompt.trim().length > 512) {
-    return Response.json({ error: 'Prompt 512 karakterden uzun olamaz' }, { status: 400 });
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) {
+    return Response.json({ error: 'API key eksik' }, { status: 500 });
   }
 
-  const stickerPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, no background elements, sticker art style`;
+  const stickerPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
 
-  try {
-    const { images } = await generateImage({
-      model: google.imageModel('imagen-3.0-generate-002'),
-      prompt: stickerPrompt,
-      aspectRatio: '1:1',
-    });
+  for (const model of MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: stickerPrompt }] }],
+            generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+          }),
+        }
+      );
 
-    if (!images || images.length === 0) {
-      return Response.json({ error: 'Görsel oluşturulamadı, tekrar dene' }, { status: 500 });
+      const data = await res.json() as GeminiResponse;
+
+      if (!res.ok) {
+        console.error(`[generate] ${model} failed:`, data.error?.message);
+        continue;
+      }
+
+      const imagePart = data.candidates?.[0]?.content?.parts?.find(
+        (p) => p.inlineData?.mimeType?.startsWith('image/')
+      );
+
+      if (!imagePart?.inlineData) continue;
+
+      const dataUrl = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+      return Response.json({ imageUrl: dataUrl, generatedAt: new Date().toISOString() });
+    } catch (err) {
+      console.error(`[generate] ${model} exception:`, err);
+      continue;
     }
-
-    const dataUrl = `data:image/png;base64,${images[0].base64}`;
-    return Response.json({ imageUrl: dataUrl, generatedAt: new Date().toISOString() });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error('[generate] error:', message);
-    return Response.json({ error: message }, { status: 500 });
   }
+
+  return Response.json({ error: 'Görsel oluşturulamadı. Gemini image generation API\'nize erişim olmayabilir.' }, { status: 500 });
 }
