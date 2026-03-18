@@ -77,7 +77,7 @@ export default function HomePage() {
         {/* ── HEADER ─────────────────────────────── */}
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
-            HAYALİNDEKİ STİCKERLARI ÜRET!
+            HAYALİNDEKİ <span className="gradient-word-slow">STİCKERLARI</span> ÜRET!
           </h1>
           <p className="text-sm text-[#b0b0b0] max-w-lg mx-auto">
             İster bastırmak istediğin stickerin görselini yükle, istersen de hayalindeki stickeri tasvir et.
@@ -90,7 +90,8 @@ export default function HomePage() {
           {/* LEFT: Input */}
           <div className="flex flex-col gap-3">
             {/* Prompt box */}
-            <div className="flex-1 bg-[#111] border border-[#2a2a2a] rounded-2xl p-4 min-h-[180px] flex flex-col">
+            <div className="rb-wrap flex-1">
+            <div className="rb-inner p-4 min-h-[180px] flex flex-col">
               <p className="text-[10px] tracking-widest text-[#555] uppercase font-mono mb-3">
                 Prompt için chatbox
               </p>
@@ -122,11 +123,13 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
+            </div>
 
             {/* Upload box */}
+            <div className="rb-wrap">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="bg-[#111] border border-[#2a2a2a] rounded-2xl p-4 text-left hover:border-[#00d9ff]/40 transition-colors group"
+              className="rb-inner p-4 text-left w-full group"
             >
               <input
                 ref={fileInputRef}
@@ -155,10 +158,12 @@ export default function HomePage() {
                 </div>
               )}
             </button>
+            </div>
           </div>
 
           {/* RIGHT: Output */}
-          <div className="bg-[#111] border border-[#2a2a2a] rounded-2xl flex flex-col items-center justify-center min-h-[280px] relative overflow-hidden">
+          <div className="rb-wrap min-h-[280px]">
+          <div className="rb-inner flex flex-col items-center justify-center" style={{minHeight: 'calc(100% - 0px)'}}>
             {isLoading ? (
               <div className="flex flex-col items-center gap-3">
                 <span className="inline-block w-8 h-8 border-2 border-[#00d9ff]/30 border-t-[#00d9ff] rounded-full animate-spin" />
@@ -204,20 +209,24 @@ export default function HomePage() {
               </div>
             )}
           </div>
+          </div>
         </div>
 
         {/* ── DETAIL SETTINGS DROPDOWN ─────────────── */}
         <div className="mb-8">
+          <div className="rb-wrap">
           <button
             onClick={() => setDetailsOpen((v) => !v)}
-            className="w-full bg-[#111] border border-[#2a2a2a] rounded-2xl px-5 py-3 text-sm font-mono text-[#b0b0b0] flex items-center justify-between hover:border-[#00d9ff]/40 transition-colors"
+            className="rb-inner w-full px-5 py-3 text-sm font-mono text-[#b0b0b0] flex items-center justify-between"
           >
             <span>Detay Ayarlama</span>
             <span className={`transition-transform duration-200 ${detailsOpen ? 'rotate-180' : ''}`}>▾</span>
           </button>
+          </div>
 
           {detailsOpen && (
-            <div className="mt-2 bg-[#111] border border-[#2a2a2a] rounded-2xl p-4">
+            <div className="rb-wrap mt-2">
+            <div className="rb-inner p-4">
               <div className="flex flex-wrap gap-3">
                 <label className="flex flex-col gap-1 flex-1 min-w-[140px]">
                   <span className="text-[10px] text-[#555] font-mono uppercase">Boyut</span>
@@ -244,6 +253,7 @@ export default function HomePage() {
                 </label>
               </div>
             </div>
+            </div>
           )}
         </div>
 
@@ -259,18 +269,11 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {STICKER_STYLES.slice(0, 6).map((style) => (
+              <div key={style.id} className="rb-wrap">
               <button
-                key={style.id}
                 onClick={() => handleStyleClick(style)}
-                className={`
-                  flex flex-col items-start gap-1 p-4 rounded-2xl border text-left
-                  transition-all duration-200 cursor-pointer group
-                  ${
-                    selectedStyle?.id === style.id
-                      ? 'bg-[#00d9ff]/10 border-[#00d9ff]'
-                      : 'bg-[#111] border-[#2a2a2a] hover:border-[#00d9ff]/40'
-                  }
-                `}
+                className={`rb-inner w-full flex flex-col items-start gap-1 p-4 text-left transition-colors
+                  ${selectedStyle?.id === style.id ? 'bg-[#00d9ff]/10' : ''}`}
               >
                 <span className={`text-sm font-extrabold ${selectedStyle?.id === style.id ? 'text-[#00d9ff]' : 'text-white'}`}>
                   {style.name}
@@ -279,6 +282,7 @@ export default function HomePage() {
                   {style.description}
                 </span>
               </button>
+              </div>
             ))}
           </div>
         </div>

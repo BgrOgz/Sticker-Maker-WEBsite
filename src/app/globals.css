@@ -82,6 +82,51 @@ body {
   color: #666;
 }
 
+/* ── Rainbow rotating border ─────────────── */
+.rb-wrap {
+  position: relative;
+  padding: 2px;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.rb-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(
+    #a855f7, #3b82f6, #06b6d4, #10b981, #facc15, #f97316, #ef4444, #ec4899, #a855f7
+  );
+  animation: rb-rotate 5s linear infinite;
+  z-index: 0;
+}
+
+.rb-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: calc(1rem - 2px);
+  background: #111;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes rb-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Slow rainbow text ───────────────────── */
+.gradient-word-slow {
+  background: linear-gradient(
+    90deg,
+    #a855f7, #3b82f6, #06b6d4, #10b981, #facc15, #f97316, #ef4444, #ec4899, #a855f7
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-rotate 10s ease infinite;
+}
+
 ::selection {
   background: var(--color-accent);
   color: #000;
