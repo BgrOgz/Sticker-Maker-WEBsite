@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",
+    "@ai-sdk/google-vertex": "^4.0.80",
     "ai": "^6.0.116",
     "framer-motion": "^11.15.0",
     "next": "15.2.9",
