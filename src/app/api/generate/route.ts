@@ -25,8 +25,12 @@ export async function POST(req: Request) {
         ? `${stickerInstruction} Based on this reference image, create a sticker. Additional description: ${prompt.trim()}`
         : `${stickerInstruction} Turn this image into a sticker.`;
 
+      // Strip data URL prefix — AI SDK expects raw base64 or Buffer, not data: URLs
+      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+
       const content = [
-        { type: 'image' as const, image: imageBase64 },
+        { type: 'image' as const, image: imageBuffer },
         { type: 'text' as const, text: userText },
       ];
 
