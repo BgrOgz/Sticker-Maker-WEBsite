@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #0a0a0a;
+  --color-surface: #1a1a1a;
+  --color-border: #2a2a2a;
+  --color-text: #ffffff;
+  --color-text-muted: #b0b0b0;
+  --color-accent: #00d9ff;
+  --color-accent-alt: #ff00ff;
+  --color-success: #00ff88;
+  --color-error: #ff3366;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+@keyframes gradient-rotate {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-word {
+  background: linear-gradient(
+    90deg,
+    #a855f7, #3b82f6, #06b6d4, #10b981, #facc15, #f97316, #ef4444, #ec4899, #a855f7
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-rotate 10s ease infinite;
+}
+
+@keyframes rainbow-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.btn-rainbow {
+  background: linear-gradient(
+    270deg,
+    #a855f7, #3b82f6, #06b6d4, #10b981, #facc15, #f97316, #ef4444, #a855f7
+  );
+  background-size: 300% 300%;
+  animation: rainbow-shift 4s ease infinite;
+  color: #000;
+  font-weight: 800;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-rainbow:hover {
+  opacity: 0.9;
+}
+
+.btn-rainbow:active {
+  transform: scale(0.98);
+}
+
+.btn-rainbow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  animation: none;
+  background: #2a2a2a;
+  color: #666;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #000;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
