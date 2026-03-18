@@ -1,7 +1,25 @@
-import { generateText } from 'ai';
-import { google } from '@ai-sdk/google';
+import { experimental_generateImage as generateImage, generateText } from 'ai';
+import { createVertex } from '@ai-sdk/google-vertex';
 
 export const maxDuration = 60;
+
+function getVertexClient() {
+  const credsB64 = process.env.GOOGLE_VERTEX_CREDENTIALS;
+  if (!credsB64) throw new Error('GOOGLE_VERTEX_CREDENTIALS env var eksik');
+
+  const creds = JSON.parse(Buffer.from(credsB64, 'base64').toString('utf-8'));
+
+  return createVertex({
+    project: creds.project_id,
+    location: 'us-central1',
+    googleAuthOptions: {
+      credentials: {
+        client_email: creds.client_email,
+        private_key: creds.private_key,
+      },
+    },
+  });
+}
 
 export async function POST(req: Request) {
   const { prompt, imageBase64 } = await req.json() as { prompt: string; imageBase64?: string };
@@ -15,50 +33,45 @@ export async function POST(req: Request) {
   }
 
   try {
-    const stickerInstruction = `Create a high-quality die-cut sticker design: vibrant saturated colors, bold outlines, cute cartoon illustration style, clean white border, isolated on pure white background.`;
+    const vertex = getVertexClient();
+    const stickerPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
 
-    let result;
-
+    // If image uploaded: use Gemini to describe it, then generate sticker with Imagen
+    let finalPrompt = stickerPrompt;
     if (imageBase64) {
-      // Multimodal: uploaded image + prompt
-      const userText = prompt.trim()
-        ? `${stickerInstruction} Based on this reference image, create a sticker. Additional description: ${prompt.trim()}`
-        : `${stickerInstruction} Turn this image into a sticker.`;
-
-      // Strip data URL prefix — AI SDK expects raw base64 or Buffer, not data: URLs
       const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
       const imageBuffer = Buffer.from(base64Data, 'base64');
 
-      const content = [
-        { type: 'image' as const, image: imageBuffer },
-        { type: 'text' as const, text: userText },
-      ];
+      const description = await generateText({
+        model: vertex('gemini-2.0-flash-001'),
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'image', image: imageBuffer },
+              {
+                type: 'text',
+                text: 'Describe this image in detail for use as a sticker design prompt. Focus on the main subject, colors, and style. Be concise (max 100 words).',
+              },
+            ],
+          },
+        ],
+      });
 
-      result = await generateText({
-        model: google('gemini-3.1-flash-image-preview'),
-        messages: [{ role: 'user', content }],
-        providerOptions: {
-          google: { responseModalities: ['TEXT', 'IMAGE'] },
-        },
-      });
-    } else {
-      // Text-only prompt
-      result = await generateText({
-        model: google('gemini-3.1-flash-image-preview'),
-        prompt: `${stickerInstruction} Subject: ${prompt.trim()}`,
-        providerOptions: {
-          google: { responseModalities: ['TEXT', 'IMAGE'] },
-        },
-      });
+      finalPrompt = `Create a high-quality sticker design based on: ${description.text}. ${prompt.trim() ? `Additional instructions: ${prompt.trim()}.` : ''} Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
     }
 
-    const imageFile = result.files?.find((f) => f.mediaType?.startsWith('image/'));
+    const { images } = await generateImage({
+      model: vertex.image('imagen-3.0-generate-002'),
+      prompt: finalPrompt,
+      aspectRatio: '1:1',
+    });
 
-    if (!imageFile) {
+    if (!images || images.length === 0) {
       return Response.json({ error: 'Görsel oluşturulamadı, tekrar dene' }, { status: 500 });
     }
 
-    const dataUrl = `data:${imageFile.mediaType};base64,${imageFile.base64}`;
+    const dataUrl = `data:image/png;base64,${images[0].base64}`;
     return Response.json({ imageUrl: dataUrl, generatedAt: new Date().toISOString() });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
