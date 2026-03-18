@@ -146,9 +146,8 @@ export interface NanoBananaResponse {
 // ============ FETCH WRAPPER ============
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
-export interface FetchOptions extends RequestInit {
+export interface FetchOptions extends Omit<RequestInit, 'method'> {
   method?: HttpMethod;
-  body?: any;
   headers?: Record<string, string>;
   timeout?: number;
 }

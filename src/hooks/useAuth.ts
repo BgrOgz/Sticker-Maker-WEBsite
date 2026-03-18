@@ -40,13 +40,13 @@ export function useAuth(): UseAuthReturn {
           localStorage.removeItem(SESSION_STORAGE_KEY);
         }
       }
-    } catch (err) {
+    } catch {
       // Ignore storage errors
       localStorage.removeItem(SESSION_STORAGE_KEY);
     }
   }, []);
 
-  const handleAuthResponse = useCallback((data: any) => {
+  const handleAuthResponse = useCallback((data: { user: User; token: string }) => {
     if (data.user && data.token) {
       const session: AuthSession = {
         user: data.user,

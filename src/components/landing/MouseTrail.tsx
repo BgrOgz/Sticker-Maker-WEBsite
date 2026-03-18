@@ -31,7 +31,7 @@ function hexToRgb(hex: string): [number, number, number] {
 // Pre-compute RGB values once — gradient oluştururken parseInt çağrılmaz
 const COLORS_RGB = COLORS.map(hexToRgb);
 
-export function MouseTrail(): JSX.Element {
+export function MouseTrail() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const particles = useRef<Particle[]>([]);

@@ -14,7 +14,7 @@ interface FallingItem {
   imgIdx: number;
 }
 
-export function FallingBackground(): JSX.Element {
+export function FallingBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
