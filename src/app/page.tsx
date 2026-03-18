@@ -9,31 +9,67 @@ import type { Style } from '@/types';
 export default function HomePage() {
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<Style | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function handleStyleClick(style: Style) {
     const enriched = applyStyleToPrompt(prompt, style);
     setPrompt(enriched);
     setSelectedStyle(style);
-    // Scroll back to top so user sees their enriched prompt
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function handleGenerate() {
-    if (!prompt.trim()) return;
-    // Auth check will go here — for now alert as placeholder
-    alert(`Generating: "${prompt}"\n\n(API route coming soon!)`);
+  async function handleGenerate() {
+    if (!prompt.trim() || isLoading) return;
+
+    setIsLoading(true);
+    setError(null);
+    setImageUrl(null);
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt.trim() }),
+      });
+
+      const data = await res.json() as { imageUrl?: string; error?: string };
+
+      if (!res.ok) {
+        setError(data.error ?? 'Bir hata oluştu');
+        return;
+      }
+
+      if (data.imageUrl) {
+        setImageUrl(data.imageUrl);
+        // Scroll to result
+        setTimeout(() => {
+          document.getElementById('result')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } catch {
+      setError('Bağlantı hatası, tekrar dene');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleDownload() {
+    if (!imageUrl) return;
+    const a = document.createElement('a');
+    a.href = imageUrl;
+    a.download = `sticker-${Date.now()}.png`;
+    a.click();
   }
 
   return (
     <main className="relative min-h-screen text-white overflow-x-hidden" style={{ background: 'transparent' }}>
-      {/* Falling sticker background */}
       <FallingBackground />
-      {/* Mouse trail overlay */}
       <MouseTrail />
 
       {/* ── HERO SECTION ─────────────────────────────── */}
       <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 text-center">
-        {/* Headline */}
         <h1 className="mb-4 text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1]">
           Generate{' '}
           <span className="gradient-word">stunning</span>
@@ -41,7 +77,7 @@ export default function HomePage() {
           stickers with AI
         </h1>
         <p className="mb-12 text-base md:text-lg text-[#b0b0b0] max-w-sm leading-relaxed">
-          Type what you imagine. Get a custom die-cut sticker with 3D preview in seconds.
+          Type what you imagine. Get a custom die-cut sticker in seconds.
         </p>
 
         {/* Prompt Input */}
@@ -54,7 +90,8 @@ export default function HomePage() {
               onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
               placeholder="a cute blue robot with sunglasses..."
               maxLength={512}
-              className="flex-1 bg-transparent text-white placeholder-[#555] outline-none text-sm font-mono"
+              disabled={isLoading}
+              className="flex-1 bg-transparent text-white placeholder-[#555] outline-none text-sm font-mono disabled:opacity-50"
             />
             {prompt.length > 0 && (
               <span className="text-xs text-[#555] font-mono">{prompt.length}/512</span>
@@ -63,15 +100,28 @@ export default function HomePage() {
 
           <button
             onClick={handleGenerate}
-            disabled={!prompt.trim()}
-            className="btn-rainbow w-full py-3 rounded-2xl text-sm tracking-wider"
+            disabled={!prompt.trim() || isLoading}
+            className="btn-rainbow w-full py-3 rounded-2xl text-sm tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Generate ✦
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Generating...
+              </span>
+            ) : (
+              'Generate ✦'
+            )}
           </button>
 
-          {selectedStyle && (
+          {selectedStyle && !isLoading && (
             <p className="text-xs text-[#00d9ff] font-mono opacity-70">
               Style applied: {selectedStyle.name}
+            </p>
+          )}
+
+          {error && (
+            <p className="text-xs text-red-400 font-mono bg-red-400/10 border border-red-400/20 rounded-xl px-3 py-2">
+              ⚠ {error}
             </p>
           )}
         </div>
@@ -82,6 +132,39 @@ export default function HomePage() {
           <div className="w-px h-10 bg-gradient-to-b from-[#b0b0b0] to-transparent" />
         </div>
       </section>
+
+      {/* ── RESULT SECTION ──────────────────────────── */}
+      {imageUrl && (
+        <section id="result" className="relative z-10 flex flex-col items-center px-4 py-24">
+          <h2 className="mb-8 text-2xl font-mono font-bold text-white">Your Sticker ✦</h2>
+          <div className="relative group">
+            {/* Glow effect */}
+            <div className="absolute inset-0 rounded-3xl bg-[#00d9ff]/20 blur-xl scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* Image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              alt="Generated sticker"
+              className="relative rounded-3xl border border-[#2a2a2a] w-72 h-72 md:w-96 md:h-96 object-contain bg-[#1a1a1a]"
+            />
+          </div>
+
+          <div className="mt-8 flex gap-3">
+            <button
+              onClick={handleDownload}
+              className="px-6 py-3 rounded-2xl bg-[#00d9ff] text-black text-sm font-bold tracking-wide hover:bg-[#00b8d4] transition-colors"
+            >
+              Download ↓
+            </button>
+            <button
+              onClick={() => { setImageUrl(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="px-6 py-3 rounded-2xl border border-[#2a2a2a] text-sm font-mono text-[#b0b0b0] hover:border-[#00d9ff]/50 hover:text-white transition-colors"
+            >
+              New Sticker
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* ── STYLES SECTION ──────────────────────────── */}
       <section className="relative z-10 px-4 pb-32 max-w-6xl mx-auto">
