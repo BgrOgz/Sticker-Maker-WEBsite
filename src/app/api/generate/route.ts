@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await generateText({
-      model: google('gemini-2.0-flash-preview-image-generation'),
+      model: google('gemini-2.0-flash-exp'),
       prompt: stickerPrompt,
       providerOptions: {
         google: {
