@@ -36,29 +36,52 @@ export async function POST(req: Request) {
     const vertex = getVertexClient();
     const stickerPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
 
-    // If image uploaded: use Gemini to describe it, then generate sticker with Imagen
+    // If image uploaded: try Gemini Vision to describe it, fall back to text prompt on error
     let finalPrompt = stickerPrompt;
     if (imageBase64) {
-      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
-      const imageBuffer = Buffer.from(base64Data, 'base64');
+      try {
+        const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
 
-      const description = await generateText({
-        model: vertex('gemini-1.5-flash-001'),
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'image', image: imageBuffer },
-              {
-                type: 'text',
-                text: 'Describe this image in detail for use as a sticker design prompt. Focus on the main subject, colors, and style. Be concise (max 100 words).',
-              },
-            ],
-          },
-        ],
-      });
+        const GEMINI_MODELS = [
+          'gemini-2.0-flash-exp',
+          'gemini-1.5-pro-002',
+          'gemini-1.5-flash-002',
+          'gemini-1.5-flash-001',
+        ];
 
-      finalPrompt = `Create a high-quality sticker design based on: ${description.text}. ${prompt.trim() ? `Additional instructions: ${prompt.trim()}.` : ''} Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
+        let description: string | null = null;
+        for (const modelId of GEMINI_MODELS) {
+          try {
+            const result = await generateText({
+              model: vertex(modelId),
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'image', image: imageBuffer },
+                    {
+                      type: 'text',
+                      text: 'Describe this image briefly for a sticker design prompt. Focus on main subject, colors, style. Max 80 words.',
+                    },
+                  ],
+                },
+              ],
+            });
+            description = result.text;
+            break;
+          } catch {
+            // Try next model
+          }
+        }
+
+        if (description) {
+          finalPrompt = `Create a high-quality sticker design based on: ${description}. ${prompt.trim() ? `Additional instructions: ${prompt.trim()}.` : ''} Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
+        }
+      } catch {
+        // Gemini Vision unavailable — proceed with text-only prompt
+        console.warn('[generate] Gemini Vision unavailable, using text prompt only');
+      }
     }
 
     const { images } = await generateImage({
