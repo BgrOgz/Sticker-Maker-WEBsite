@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       const imageBuffer = Buffer.from(base64Data, 'base64');
 
       const description = await generateText({
-        model: vertex('gemini-2.0-flash-001'),
+        model: vertex('gemini-1.5-flash'),
         messages: [
           {
             role: 'user',
