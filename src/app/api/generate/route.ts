@@ -1,5 +1,6 @@
 import { experimental_generateImage as generateImage, generateText } from 'ai';
 import { createVertex } from '@ai-sdk/google-vertex';
+import { google } from '@ai-sdk/google';
 
 export const maxDuration = 60;
 
@@ -21,6 +22,33 @@ function getVertexClient() {
   });
 }
 
+async function describeImage(imageBuffer: Buffer): Promise<string | null> {
+  // Use direct Gemini API (GOOGLE_GENERATIVE_AI_API_KEY) for vision
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) return null;
+
+  try {
+    const result = await generateText({
+      model: google('gemini-2.5-flash'),
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image', image: imageBuffer },
+            {
+              type: 'text',
+              text: 'Describe this image in detail for a sticker design. Focus on: the main subject (person, animal, object), physical appearance, colors, expression, clothing. Be specific and vivid. Max 120 words.',
+            },
+          ],
+        },
+      ],
+    });
+    return result.text;
+  } catch (err) {
+    console.warn('[generate] Gemini Vision failed:', err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 export async function POST(req: Request) {
   const { prompt, imageBase64 } = await req.json() as { prompt: string; imageBase64?: string };
 
@@ -34,54 +62,22 @@ export async function POST(req: Request) {
 
   try {
     const vertex = getVertexClient();
-    const stickerPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
 
-    // If image uploaded: try Gemini Vision to describe it, fall back to text prompt on error
-    let finalPrompt = stickerPrompt;
+    let finalPrompt: string;
+
     if (imageBase64) {
-      try {
-        const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
-        const imageBuffer = Buffer.from(base64Data, 'base64');
+      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, '');
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+      const description = await describeImage(imageBuffer);
 
-        const GEMINI_MODELS = [
-          'gemini-2.0-flash-exp',
-          'gemini-1.5-pro-002',
-          'gemini-1.5-flash-002',
-          'gemini-1.5-flash-001',
-        ];
-
-        let description: string | null = null;
-        for (const modelId of GEMINI_MODELS) {
-          try {
-            const result = await generateText({
-              model: vertex(modelId),
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    { type: 'image', image: imageBuffer },
-                    {
-                      type: 'text',
-                      text: 'Describe this image briefly for a sticker design prompt. Focus on main subject, colors, style. Max 80 words.',
-                    },
-                  ],
-                },
-              ],
-            });
-            description = result.text;
-            break;
-          } catch {
-            // Try next model
-          }
-        }
-
-        if (description) {
-          finalPrompt = `Create a high-quality sticker design based on: ${description}. ${prompt.trim() ? `Additional instructions: ${prompt.trim()}.` : ''} Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
-        }
-      } catch {
-        // Gemini Vision unavailable — proceed with text-only prompt
-        console.warn('[generate] Gemini Vision unavailable, using text prompt only');
+      if (description) {
+        finalPrompt = `Create a high-quality die-cut sticker design of: ${description}. User instructions: ${prompt.trim()}. Style: sticker art with clean white border, vibrant saturated colors, bold outlines, isolated on pure white background, cartoon illustration style, professional sticker design.`;
+      } else {
+        // Vision unavailable — use text prompt only
+        finalPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background.`;
       }
+    } else {
+      finalPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, sticker art style`;
     }
 
     const { images } = await generateImage({
