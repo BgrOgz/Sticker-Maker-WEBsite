@@ -1,4 +1,4 @@
-import { generateText } from 'ai';
+import { experimental_generateImage as generateImage } from 'ai';
 import { google } from '@ai-sdk/google';
 
 export const maxDuration = 60;
@@ -17,24 +17,17 @@ export async function POST(req: Request) {
   const stickerPrompt = `Create a high-quality sticker design: ${prompt.trim()}. Style: die-cut sticker with clean white border, vibrant saturated colors, cute cartoon illustration style, bold outlines, isolated on pure white background, no background elements, sticker art style`;
 
   try {
-    const result = await generateText({
-      model: google('gemini-2.0-flash-exp'),
+    const { images } = await generateImage({
+      model: google.imageModel('imagen-3.0-generate-002'),
       prompt: stickerPrompt,
-      providerOptions: {
-        google: {
-          responseModalities: ['TEXT', 'IMAGE'],
-        },
-      },
+      aspectRatio: '1:1',
     });
 
-    const imageFile = result.files?.find((f) => f.mediaType?.startsWith('image/'));
-
-    if (!imageFile) {
+    if (!images || images.length === 0) {
       return Response.json({ error: 'Görsel oluşturulamadı, tekrar dene' }, { status: 500 });
     }
 
-    const dataUrl = `data:${imageFile.mediaType};base64,${imageFile.base64}`;
-
+    const dataUrl = `data:image/png;base64,${images[0].base64}`;
     return Response.json({ imageUrl: dataUrl, generatedAt: new Date().toISOString() });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
