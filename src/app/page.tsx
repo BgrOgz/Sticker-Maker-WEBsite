@@ -41,7 +41,10 @@ export default function HomePage() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          imageBase64: uploadedImage ?? undefined,
+        }),
       });
 
       const data = await res.json() as { imageUrl?: string; error?: string };
